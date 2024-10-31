@@ -39,8 +39,8 @@ DraggableButton.Visible = false  -- Hidden initially
 -- Function to toggle MainGUI visibility with animations
 local function toggleGUI(show)
     if show then
+        MainGUI.Enabled = true  -- GUI'yi görünür yap
         MainGUI:TweenSize(UDim2.new(1, 0, 1, 0), "Out", "Quart", 0.5)
-        MainGUI.Enabled = true
         DraggableButton.Visible = false
     else
         MainGUI:TweenSize(UDim2.new(0, 0, 0, 0), "In", "Quart", 0.5)
