@@ -1,0 +1,146 @@
+-- Load the Orion Library
+local OrionLib = loadstring(game:HttpGet(('https://raw.githubusercontent.com/shlexware/Orion/main/source')))()
+
+-- Create the main window for the initial UI
+local Window = OrionLib:MakeWindow({
+    Name = "🖥️ KDML SCRIPT - UNIVERSAL",
+    HidePremium = false,
+    SaveConfig = true,
+    ConfigFolder = "KDMLScripts"
+})
+
+-- Create the "Chat Log" tab with only the Start button
+local ChatLogTab = Window:MakeTab({
+    Name = "📝 Chat Log",
+    Icon = "rbxassetid://4483345998",  -- Valid asset ID needed here
+    PremiumOnly = false
+})
+
+-- Variable to store the webhook URL
+local webhookUrl = ""
+local isLogging = false  -- Tracks logging status
+
+-- Main UI components, hidden initially
+local MainGUI = Instance.new("ScreenGui")
+MainGUI.Parent = game:GetService("CoreGui")
+MainGUI.Enabled = false  -- Initially hidden
+
+-- Add a draggable button to reopen the GUI
+local DraggableButton = Instance.new("TextButton")
+DraggableButton.Size = UDim2.new(0, 80, 0, 40)
+DraggableButton.Position = UDim2.new(0.5, -40, 0, 0)
+DraggableButton.BackgroundColor3 = Color3.new(0, 0, 0)
+DraggableButton.Text = "Open Chat Log"
+DraggableButton.TextColor3 = Color3.new(1, 1, 1)
+DraggableButton.Draggable = true
+DraggableButton.Parent = MainGUI
+DraggableButton.Visible = false  -- Hidden initially
+
+-- Function to toggle MainGUI visibility with animations
+local function toggleGUI(show)
+    if show then
+        MainGUI:TweenSize(UDim2.new(1, 0, 1, 0), "Out", "Quart", 0.5)
+        MainGUI.Enabled = true
+        DraggableButton.Visible = false
+    else
+        MainGUI:TweenSize(UDim2.new(0, 0, 0, 0), "In", "Quart", 0.5)
+        wait(0.5)
+        MainGUI.Enabled = false
+        DraggableButton.Visible = true
+    end
+end
+
+-- Chat log UI container with an animation
+local ChatLogContainer = Instance.new("Frame")
+ChatLogContainer.Size = UDim2.new(0, 400, 0, 300)
+ChatLogContainer.Position = UDim2.new(0.5, -200, 0.5, -150)
+ChatLogContainer.BackgroundTransparency = 0.1
+ChatLogContainer.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+ChatLogContainer.Parent = MainGUI
+
+-- Webhook URL TextBox
+local WebhookTextbox = Instance.new("TextBox")
+WebhookTextbox.Size = UDim2.new(0, 300, 0, 40)
+WebhookTextbox.Position = UDim2.new(0.5, -150, 0.2, 0)
+WebhookTextbox.PlaceholderText = "Enter Webhook URL here"
+WebhookTextbox.Text = ""
+WebhookTextbox.TextColor3 = Color3.new(1, 1, 1)
+WebhookTextbox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+WebhookTextbox.Parent = ChatLogContainer
+
+-- Status Label
+local StatusLabel = Instance.new("TextLabel")
+StatusLabel.Size = UDim2.new(0, 300, 0, 40)
+StatusLabel.Position = UDim2.new(0.5, -150, 0.4, 0)
+StatusLabel.Text = "Chat Log Closed"
+StatusLabel.TextColor3 = Color3.new(1, 1, 1)
+StatusLabel.BackgroundTransparency = 1
+StatusLabel.Parent = ChatLogContainer
+
+-- Start Logging Button
+local StartLoggingButton = Instance.new("TextButton")
+StartLoggingButton.Size = UDim2.new(0, 150, 0, 40)
+StartLoggingButton.Position = UDim2.new(0.3, -75, 0.6, 0)
+StartLoggingButton.Text = "Start Logging"
+StartLoggingButton.TextColor3 = Color3.new(1, 1, 1)
+StartLoggingButton.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
+StartLoggingButton.Parent = ChatLogContainer
+
+-- Close Button for the Chat Log UI
+local CloseButton = Instance.new("TextButton")
+CloseButton.Size = UDim2.new(0, 150, 0, 40)
+CloseButton.Position = UDim2.new(0.7, -75, 0.6, 0)
+CloseButton.Text = "Close"
+CloseButton.TextColor3 = Color3.new(1, 1, 1)
+CloseButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+CloseButton.Parent = ChatLogContainer
+
+-- Connect DraggableButton to reopen GUI
+DraggableButton.MouseButton1Click:Connect(function()
+    toggleGUI(true)
+end)
+
+-- Connect the Start button in the main UI to show the new GUI
+ChatLogTab:AddButton({
+    Name = "Start",
+    Callback = function()
+        toggleGUI(true)  -- Show the MainGUI
+    end
+})
+
+-- Connect StartLoggingButton to start logging chat messages
+StartLoggingButton.MouseButton1Click:Connect(function()
+    webhookUrl = WebhookTextbox.Text  -- Get webhook URL
+    if webhookUrl == "" then
+        StatusLabel.Text = "Please enter a valid Webhook URL"
+        return
+    end
+    
+    StatusLabel.Text = "Chat Log Active"
+    isLogging = true
+
+    -- Set up chat logging functionality
+    game:GetService("Players").PlayerAdded:Connect(function(player)
+        player.Chatted:Connect(function(message)
+            if isLogging and webhookUrl ~= "" then
+                local data = {
+                    ["content"] = "Chat message from: " .. player.Name .. "\n" .. "Message: " .. message,
+                    ["username"] = "⭐ KDML CHATLOG",
+                    ["avatar_url"] = "https://cdn.discordapp.com/avatars/1299949654196224011/a_3ec49dc9f4ec426a32cd30daf78d9efb.gif?size=80"
+                }
+                local http = game:GetService("HttpService")
+                http:PostAsync(webhookUrl, http:JSONEncode(data), Enum.HttpContentType.ApplicationJson)
+            end
+        end)
+    end)
+end)
+
+-- Connect CloseButton to close the Chat Log UI
+CloseButton.MouseButton1Click:Connect(function()
+    isLogging = false
+    StatusLabel.Text = "Chat Log Closed"
+    toggleGUI(false)  -- Hide the MainGUI with animation
+end)
+
+-- Initialize the Orion library UI
+OrionLib:Init()
